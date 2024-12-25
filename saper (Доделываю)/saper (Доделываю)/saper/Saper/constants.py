@@ -30,10 +30,10 @@ WINNER_WINDOW_TITLE = "WINNER"
 WINNER_MESSAGE = "Победа :)))"
 
 # список цветов для каждой цифры которая обозначает бомбы вокруг
-COLOR_CHAR = {1: "#222", 2: "#2f2", 3: "#f22", 4: "#22f", 5: "#220", 6: "#022", 7: "#202", 8: "#2H2"}
+COLOR_CHAR = {1: "#222", 2: "#2f2", 3: "#f22", 4: "#22f", 5: "#220", 6: "#022", 7: "#202", 8: "#2F2"}
 
 # цвет цифры по умолчанию
-DEFAULT_COLOR_CHAR = '#2HH'
+DEFAULT_COLOR_CHAR = '#000'
 
 # шрифт и стиль цифры
 STYLE_FONT_CEIL = 'sans 13 bold'
@@ -53,4 +53,7 @@ MINE_COUNT = 5
 
 # Общее количество ячеек
 COUNT_CEIL = COUNT_ROWS * COUNT_COLUMNS
+
+# Добавляем константы для базы данных
+DATABASE_NAME = "saper_game.db"
 

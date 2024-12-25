@@ -4,6 +4,7 @@ from Saper.gui import GUI
 from Saper.ceil import Ceil
 from Saper.row import Row
 from Saper.constants import *
+from Saper.db import log_game
 
 
 class Saper(object):
@@ -345,3 +346,18 @@ class Saper(object):
         """
         self.grid()
         self.gui.show()
+
+    def game_over(self):
+        self.gui.game_over()
+        self.save_game_result('loss')
+
+    def game_winner(self):
+        self.gui.game_winner()
+        self.save_game_result('win')
+
+    def save_game_result(self, result):
+        if self.gui.current_user:
+            game_time = self.gui._time_begin - 1
+            found_mines = self.count_selected_mine
+            total_mines = self.mine_count
+            log_game(self.gui.current_user, game_time, result, found_mines, total_mines)

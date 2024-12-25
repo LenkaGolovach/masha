@@ -3,6 +3,8 @@ import tkinter.messagebox as tkMessageBox
 import tkinter as Tkinter
 import tkinter.simpledialog as simpledialog
 from Saper.constants import *
+from Saper.db import initialize_db, add_user, log_game, get_statistics
+import tkinter.ttk as ttk
 
 
 class GUI(Tkinter.Tk):
@@ -12,6 +14,9 @@ class GUI(Tkinter.Tk):
     _timer_id = False
 
     def __init__(self, count_rows=COUNT_ROWS, count_columns=COUNT_COLUMNS, mine_count=MINE_COUNT):
+        # Инициализируем базу данных
+        initialize_db()
+        
         Tkinter.Tk.__init__(self)
         self.title(WINDOW_TITLE)
         self.count_rows = count_rows
@@ -45,6 +50,8 @@ class GUI(Tkinter.Tk):
 
         self.tk_label_counter = Tkinter.Label(self.tk_frame_toolbar, text="00/00")
         self.tk_label_counter.grid(row=0, column=2, sticky=Tkinter.NSEW)
+
+        self.current_user = None  # Добавляем атрибут для текущего пользователя
 
     def update_window_size(self, count_rows, count_columns, mine_count):
         """
@@ -89,12 +96,21 @@ class GUI(Tkinter.Tk):
     def game_over(self):
         self.timer_stop()
         tkMessageBox.showerror(GAME_OVER_WINDOW_TITLE, GAME_OVER_MESSAGE)
+        self.log_game_result('loss')
         return False
 
     def game_winner(self):
         self.timer_stop()
         tkMessageBox.showinfo(WINNER_WINDOW_TITLE, WINNER_MESSAGE)
+        self.log_game_result('win')
         return False
+
+    def log_game_result(self, result):
+        if self.current_user:
+            game_time = self._time_begin - 1
+            found_mines = self.game.count_selected_mine
+            total_mines = self.mine_count
+            log_game(self.current_user, game_time, result, found_mines, total_mines)
 
     def grid(self):
         super(GUI, self).grid()
@@ -124,9 +140,10 @@ class GUI(Tkinter.Tk):
         name_entry.pack()
 
         def save_player_name():
-            player_name = name_entry.get()
+            player_name = name_entry.get().strip()
             if player_name:
-                self.player_name = player_name
+                self.current_user = player_name
+                add_user(player_name)  # Добавляем пользователя в базу данных
                 dialog.destroy()
                 self.show()
 
@@ -163,6 +180,9 @@ class GUI(Tkinter.Tk):
 
         edit_game_params_button = Tkinter.Button(admin_win, text="Редактировать параметры игры", command=self.edit_game_params)
         edit_game_params_button.pack()
+
+        stats_button = Tkinter.Button(admin_win, text="Просмотреть статистику", command=self.show_statistics)
+        stats_button.pack()
 
     def edit_game_params(self):
         params_win = Tkinter.Toplevel(self)
@@ -203,6 +223,22 @@ class GUI(Tkinter.Tk):
 
         save_button = Tkinter.Button(params_win, text="Сохранить", command=save_game_params)
         save_button.pack()
+
+    def show_statistics(self):
+        stats = get_statistics()
+        stats_win = Tkinter.Toplevel(self)
+        stats_win.title("Статистика игр")
+
+        columns = ('username', 'total_games', 'wins', 'losses', 'average_time')
+        tree = ttk.Treeview(stats_win, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col.capitalize())
+
+        for row in stats:
+            tree.insert('', Tkinter.END, values=row)
+
+        tree.pack(fill=Tkinter.BOTH, expand=True)
 
     def show(self):
         if not self.is_grid:

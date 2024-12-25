@@ -76,6 +76,10 @@ class Ceil(object):
 
         if self.event_right_click:
             self.event_right_click(self, event)
+        
+        # Добавляем обновление количества найденных мин в GUI
+        self.row.game.count_selected_mine = len([ceil for row in self.row.game.list_rows for ceil in row.get_list_ceil() if ceil.is_user_select_mine])
+        self.row.game.gui.show_selected_count_mine(self.row.game.count_selected_mine)
 
     @classmethod
     def get_image_flag(cls):
