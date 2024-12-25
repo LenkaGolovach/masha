@@ -47,9 +47,9 @@ EVENT_RIGHT_CLICK = "<Button-3>"
 
 # ------------------------------- GAME PARAMETERS -------------------------
 # Дефолтные параметры игры
-COUNT_ROWS = 10
-COUNT_COLUMNS = 10
-MINE_COUNT = 10
+COUNT_ROWS = 5
+COUNT_COLUMNS = 5
+MINE_COUNT = 5
 
 # Общее количество ячеек
 COUNT_CEIL = COUNT_ROWS * COUNT_COLUMNS
