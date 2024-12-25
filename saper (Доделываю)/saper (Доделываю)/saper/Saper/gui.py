@@ -11,10 +11,13 @@ class GUI(Tkinter.Tk):
     _time_begin = 1
     _timer_id = False
 
-    def __init__(self):
+    def __init__(self, count_rows=COUNT_ROWS, count_columns=COUNT_COLUMNS, mine_count=MINE_COUNT):
         Tkinter.Tk.__init__(self)
         self.title(WINDOW_TITLE)
-        self.geometry("%sx%s" % (WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.count_rows = count_rows
+        self.count_columns = count_columns
+        self.mine_count = mine_count
+        self.update_window_size(self.count_rows, self.count_columns, self.mine_count)
 
         # Меню
         menubar = Tkinter.Menu(self)
@@ -28,12 +31,11 @@ class GUI(Tkinter.Tk):
         file_menu.add_command(label="Выход", command=self.quit)
         menubar.add_cascade(label="Файл", menu=file_menu)
 
-        self.tk_frame_toolbar = Tkinter.Frame(self, width=WINDOW_WIDTH, height=WINDOW_TOOLBAR_HEIGHT, background="grey",
+        self.tk_frame_toolbar = Tkinter.Frame(self, background="grey",
                                               relief=Tkinter.GROOVE, border=2)
 
-        self.tk_frame_main = Tkinter.Frame(self, width=WINDOW_WIDTH, height=(WINDOW_HEIGHT - WINDOW_TOOLBAR_HEIGHT),
-                                           background=WINDOW_MAIN_FRAME_COLOR_BACKGROUND, relief=Tkinter.GROOVE,
-                                           border=2)
+        self.tk_frame_main = Tkinter.Frame(self, background=WINDOW_MAIN_FRAME_COLOR_BACKGROUND,
+                                           relief=Tkinter.GROOVE, border=2)
 
         self.tk_label_timer = Tkinter.Label(self.tk_frame_toolbar, text="0000")
         self.tk_label_timer.grid(row=0, column=0, sticky=Tkinter.NSEW)
@@ -44,15 +46,31 @@ class GUI(Tkinter.Tk):
         self.tk_label_counter = Tkinter.Label(self.tk_frame_toolbar, text="00/00")
         self.tk_label_counter.grid(row=0, column=2, sticky=Tkinter.NSEW)
 
+    def update_window_size(self, count_rows, count_columns, mine_count):
+        """
+        Обновляет размер окна и другие параметры на основе новых настроек.
+        """
+        self.count_rows = count_rows
+        self.count_columns = count_columns
+        self.mine_count = mine_count
+
+        # Общая ширина окна
+        self.window_width = SIZE_CEIL * self.count_columns + 10 + (self.count_columns * (PADDING_BETWEEN_CEIL * 2))
+
+        # Общая высота окна
+        self.window_height = SIZE_CEIL * self.count_rows + 10 + (self.count_rows * (PADDING_BETWEEN_CEIL * 2)) + WINDOW_TOOLBAR_HEIGHT
+
+        self.geometry(f"{self.window_width}x{self.window_height}")
+
     def reset_game(self):
         if hasattr(self, 'reset_callback') and callable(self.reset_callback):
             self.reset_callback()
 
     def show_all_count_mine(self):
-        self.tk_label_counter['text'] = "00/%2d" % MINE_COUNT
+        self.tk_label_counter['text'] = "00/%2d" % self.mine_count
 
     def show_selected_count_mine(self, selected_mine):
-        self.tk_label_counter['text'] = "%2d/%2d" % (selected_mine, MINE_COUNT)
+        self.tk_label_counter['text'] = "%2d/%2d" % (selected_mine, self.mine_count)
 
     def timer_start(self):
         if not self._timer_id and self._time_begin == 1:
@@ -84,7 +102,7 @@ class GUI(Tkinter.Tk):
 
         self.tk_frame_toolbar.rowconfigure('all', minsize=WINDOW_TOOLBAR_HEIGHT)
 
-        width_label_toolbar = (float(WINDOW_WIDTH - WINDOW_TOOLBAR_HEIGHT)) / 2.0
+        width_label_toolbar = (float(self.window_width - WINDOW_TOOLBAR_HEIGHT)) / 2.0
         self.tk_frame_toolbar.columnconfigure(0, minsize=width_label_toolbar - 5)
         self.tk_frame_toolbar.columnconfigure(1, minsize=WINDOW_TOOLBAR_HEIGHT)
         self.tk_frame_toolbar.columnconfigure(2, minsize=width_label_toolbar - 5)
@@ -150,23 +168,38 @@ class GUI(Tkinter.Tk):
         params_win = Tkinter.Toplevel(self)
         params_win.title("Настройки игры")
 
-        size_label = Tkinter.Label(params_win, text="Размер поля:")
+        size_label = Tkinter.Label(params_win, text="Количество строк:")
         size_label.pack()
         size_entry = Tkinter.Entry(params_win)
+        size_entry.insert(0, str(self.count_rows))
         size_entry.pack()
+
+        columns_label = Tkinter.Label(params_win, text="Количество столбцов:")
+        columns_label.pack()
+        columns_entry = Tkinter.Entry(params_win)
+        columns_entry.insert(0, str(self.count_columns))
+        columns_entry.pack()
 
         mines_label = Tkinter.Label(params_win, text="Количество мин:")
         mines_label.pack()
         mines_entry = Tkinter.Entry(params_win)
+        mines_entry.insert(0, str(self.mine_count))
         mines_entry.pack()
 
         def save_game_params():
-            new_size = int(size_entry.get())
-            new_mines = int(mines_entry.get())
+            try:
+                new_rows = int(size_entry.get())
+                new_columns = int(columns_entry.get())
+                new_mines = int(mines_entry.get())
 
-            print(f"Новое поле: {new_size}x{new_size}, Количество мин: {new_mines}")
+                if new_rows <= 0 or new_columns <= 0 or new_mines < 0 or new_mines >= new_rows * new_columns:
+                    tkMessageBox.showerror("Ошибка", "Неверные параметры игры.")
+                    return
 
-            params_win.destroy()
+                self.game.update_parameters(new_rows, new_columns, new_mines)
+                params_win.destroy()
+            except ValueError:
+                tkMessageBox.showerror("Ошибка", "Пожалуйста, введите допустимые числовые значения.")
 
         save_button = Tkinter.Button(params_win, text="Сохранить", command=save_game_params)
         save_button.pack()

@@ -10,7 +10,12 @@ class Saper(object):
     # Число проставленных мин пользователя
     count_selected_mine = 0
 
-    def __init__(self, **args):
+    def __init__(self, count_rows=COUNT_ROWS, count_columns=COUNT_COLUMNS, mine_count=MINE_COUNT):
+        # Параметры игры
+        self.count_rows = count_rows
+        self.count_columns = count_columns
+        self.mine_count = mine_count
+        self.count_ceil = self.count_columns * self.count_rows
 
         # Номера ячеек которые содержат мины
         self.list_numbers_field_for_mine = []
@@ -21,7 +26,8 @@ class Saper(object):
         # Объект ячеек с расставленными пользователем минами
         self.list_ceil_on_selected_mine = []
 
-        self.gui = GUI()
+        self.gui = GUI(self.count_rows, self.count_columns, self.mine_count)
+        self.gui.game = self  # Связываем GUI с этим экземпляром Saper
 
         self.gui.show_all_count_mine()
 
@@ -57,7 +63,20 @@ class Saper(object):
         self.create_mine()
         self.grid()
 
+    def update_parameters(self, new_count_rows, new_count_columns, new_mine_count):
+        """
+        Обновляет параметры игры и перезапускает игру.
+        """
+        self.count_rows = new_count_rows
+        self.count_columns = new_count_columns
+        self.mine_count = new_mine_count
+        self.count_ceil = self.count_columns * self.count_rows
 
+        # Обновляем параметры GUI
+        self.gui.update_window_size(self.count_rows, self.count_columns, self.mine_count)
+
+        # Перезапускаем игру
+        self.reset_game()
 
     def create_mine(self):
         """
@@ -67,15 +86,13 @@ class Saper(object):
         # формируем случайные мины на поле
         self.create_random_mine()
 
-        # self.__listRows = [Row(number_row) for number_row in range(0,COUNT_ROWS)]
-
-        for number_row in range(0, COUNT_ROWS):
+        for number_row in range(0, self.count_rows):
             self.list_rows.insert(number_row, Row(number_row))
 
             # пробегаем по строкам и создаём объекты ячеек
-            for number_ceil in range(0, COUNT_COLUMNS):
+            for number_ceil in range(0, self.count_columns):
                 ceil = Ceil(number_ceil, self.gui.tk_frame_main)
-                ceil.number_in_all = (number_row * COUNT_COLUMNS) + number_ceil + 1
+                ceil.number_in_all = (number_row * self.count_columns) + number_ceil + 1
                 ceil.bind(EVENT_LEFT_CLICK, self.left_click)
                 ceil.bind(EVENT_RIGHT_CLICK, self.right_click)
 
@@ -89,7 +106,7 @@ class Saper(object):
         Формируем случайные мины на поле
         """
 
-        for i in range(0, MINE_COUNT):
+        for i in range(0, self.mine_count):
             self.list_numbers_field_for_mine.append(self.random_number_ceil_on_mine())
 
     def random_number_ceil_on_mine(self):
@@ -99,7 +116,7 @@ class Saper(object):
         :rtype: int
         """
 
-        random_number_ceil = random.randint(1, COUNT_CEIL)
+        random_number_ceil = random.randint(1, self.count_ceil)
 
         if random_number_ceil in self.list_numbers_field_for_mine:
             return self.random_number_ceil_on_mine()
@@ -304,12 +321,12 @@ class Saper(object):
             self.gui.show_selected_count_mine(self.count_selected_mine)
 
         # проверям кол-во проставленных и всего и проверяем на правильность
-        if self.count_selected_mine == MINE_COUNT:
+        if self.count_selected_mine == self.mine_count:
             for ceil in self.list_ceil_on_selected_mine:
                 if ceil.is_mine and ceil.is_user_select_mine:
                     count_rules_mine += 1
 
-            if count_rules_mine == MINE_COUNT:
+            if count_rules_mine == self.mine_count:
                 self.gui.game_winner()
 
     def grid(self):
